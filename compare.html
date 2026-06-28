@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>체류 시간 늘리기 — 두 문서 비교</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #16213e 100%);
+      border-bottom: 1px solid #2d3748;
+      padding: 28px 40px;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #f7fafc;
+      letter-spacing: -0.3px;
+    }
+    header p {
+      margin-top: 6px;
+      font-size: 0.85rem;
+      color: #718096;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 20px 40px 0;
+    }
+    .tab-btn {
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 1px solid #2d3748;
+      background: transparent;
+      color: #a0aec0;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+      font-weight: 600;
+    }
+    .tab-btn:hover:not(.active) { border-color: #4a5568; color: #e2e8f0; }
+
+    /* ── Diff badges ── */
+    .diff-legend {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 14px 40px;
+      font-size: 0.78rem;
+      color: #718096;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .dot-a { background: #3b82f6; }
+    .dot-b { background: #a78bfa; }
+    .dot-common { background: #48bb78; }
+
+    /* ── Main grid ── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+
+    /* ── Column header ── */
+    .col-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 16px 24px;
+      border-bottom: 2px solid;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+    }
+    .col-header.left  { background: rgba(59,130,246,0.12); border-color: #3b82f6; border-radius: 12px 0 0 0; }
+    .col-header.right { background: rgba(167,139,250,0.12); border-color: #a78bfa; border-radius: 0 12px 0 0; }
+    .col-icon { font-size: 1.3rem; }
+    .col-title { font-size: 0.95rem; font-weight: 700; }
+    .col-sub   { font-size: 0.75rem; color: #718096; margin-top: 2px; }
+    .col-badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .col-header.left  .col-badge { background: rgba(59,130,246,0.25); color: #93c5fd; }
+    .col-header.right .col-badge { background: rgba(167,139,250,0.25); color: #c4b5fd; }
+
+    /* ── Panel ── */
+    .panel {
+      background: #141924;
+      border: 1px solid #1e2535;
+      padding: 28px 28px 36px;
+      overflow-y: auto;
+    }
+    .panel.left  { border-radius: 0 0 0 12px; border-right: none; }
+    .panel.right { border-radius: 0 0 12px 0; }
+
+    /* ── Section blocks ── */
+    .section {
+      margin-bottom: 28px;
+      border-radius: 10px;
+      border: 1px solid #1e2535;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .section:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+    .section-head {
+      padding: 11px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .left  .section-head { background: rgba(59,130,246,0.15); color: #93c5fd; border-bottom: 1px solid rgba(59,130,246,0.2); }
+    .right .section-head { background: rgba(167,139,250,0.15); color: #c4b5fd; border-bottom: 1px solid rgba(167,139,250,0.2); }
+
+    .section-body {
+      padding: 16px;
+      background: #1a2233;
+      font-size: 0.875rem;
+      line-height: 1.75;
+      color: #cbd5e0;
+    }
+
+    /* ── Content elements ── */
+    .section-body h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin: 14px 0 6px;
+    }
+    .section-body h3:first-child { margin-top: 0; }
+
+    .section-body p { margin-bottom: 8px; }
+
+    .section-body ul, .section-body ol {
+      padding-left: 18px;
+      margin-bottom: 8px;
+    }
+    .section-body li { margin-bottom: 4px; }
+
+    .section-body strong { color: #f7fafc; font-weight: 700; }
+
+    .section-body blockquote {
+      border-left: 3px solid #a78bfa;
+      padding: 10px 14px;
+      background: rgba(167,139,250,0.08);
+      border-radius: 0 6px 6px 0;
+      font-style: italic;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .section-body code {
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: 'Fira Code', 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #79c0ff;
+    }
+
+    .section-body pre {
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      font-family: 'Fira Code', 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    /* ── Table ── */
+    .tbl-wrap { overflow-x: auto; margin-top: 8px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    th {
+      background: #0d1117;
+      color: #a0aec0;
+      font-weight: 600;
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #2d3748;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #1a2233;
+      color: #cbd5e0;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+
+    /* ── Phase cards (right panel) ── */
+    .phase-card {
+      background: #0d1117;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .phase-card h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+    .phase-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .phase-1 .phase-tag { background: rgba(52,211,153,0.2); color: #6ee7b7; }
+    .phase-2 .phase-tag { background: rgba(251,191,36,0.2); color: #fcd34d; }
+    .phase-3 .phase-tag { background: rgba(248,113,113,0.2); color: #fca5a5; }
+    .phase-card ul { padding-left: 16px; }
+    .phase-card li { font-size: 0.82rem; margin-bottom: 3px; color: #a0aec0; }
+    .effect-badge {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #48bb78;
+      font-weight: 600;
+    }
+
+    /* ── Insight cards ── */
+    .insight-card {
+      background: #0d1117;
+      border-left: 3px solid;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .insight-card:nth-child(1) { border-color: #f59e0b; }
+    .insight-card:nth-child(2) { border-color: #3b82f6; }
+    .insight-card:nth-child(3) { border-color: #10b981; }
+    .insight-title { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .insight-desc  { font-size: 0.78rem; color: #a0aec0; line-height: 1.55; }
+
+    /* ── Priority table colors ── */
+    .pri-high   { color: #f87171; }
+    .pri-medium { color: #fbbf24; }
+    .pri-low    { color: #34d399; }
+
+    /* ── Diff highlight ── */
+    .diff-only {
+      background: rgba(167,139,250,0.06);
+      border-left: 2px solid #a78bfa;
+      padding-left: 10px;
+      margin-left: -10px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── Floating compare button ── */
+    .fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 22px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      z-index: 100;
+    }
+    .fab:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(59,130,246,0.5); }
+
+    /* ── Diff overlay mode ── */
+    body.diff-mode .panel.left  .section:not(.shared) { opacity: 0.35; }
+    body.diff-mode .panel.right .section:not(.shared) { opacity: 0.35; }
+    body.diff-mode .section.unique { opacity: 1 !important; border-color: #a78bfa; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f1117; }
+    ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 3px; }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .panel.left { border-right: 1px solid #1e2535; border-radius: 0; }
+      .col-header.left  { border-radius: 12px 12px 0 0; }
+      .col-header.right { border-radius: 0; }
+      .panel.right { border-radius: 0 0 12px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🕐 체류 시간 늘리기 — 두 문서 비교</h1>
+  <p>Notion MCP 생성 문서 · 브레인스토밍 vs. Sequential Thinking 체계적 구상</p>
+</header>
+
+<div class="diff-legend">
+  <span class="badge"><span class="badge-dot dot-a"></span> 브레인스토밍 문서</span>
+  <span class="badge"><span class="badge-dot dot-b"></span> 체계적 구상 문서</span>
+  <span class="badge"><span class="badge-dot dot-common"></span> 공통 핵심 전략</span>
+</div>
+
+<div class="compare-grid">
+
+  <!-- ══════════════ LEFT COLUMN ══════════════ -->
+  <div>
+    <div class="col-header left">
+      <span class="col-icon">💡</span>
+      <div>
+        <div class="col-title">체류 시간 늘리기</div>
+        <div class="col-sub">브레인스토밍 · 아이디어 중심</div>
+      </div>
+      <span class="col-badge">7가지 전략</span>
+    </div>
+    <div class="panel left">
+
+      <!-- 목표 -->
+      <div class="section shared">
+        <div class="section-head">🎯 목표</div>
+        <div class="section-body">
+          <p>웹 포트폴리오 방문자 평균 체류 시간을 <strong>현재의 2배</strong>로 늘린다.</p>
+        </div>
+      </div>
+
+      <!-- 현황 진단 -->
+      <div class="section shared">
+        <div class="section-head">🔍 현황 진단</div>
+        <div class="section-body">
+          <ul>
+            <li>방문자 구성: 채용 담당자, 동료 개발자, 잠재 클라이언트</li>
+            <li>이탈 원인: 콘텐츠 깊이 부족, 탐색 동선 불명확, 단순 나열식 구성</li>
+            <li>체류 시간이 짧다 = 방문자의 호기심을 유발하지 못하고 있음</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 핵심 전략 7가지 -->
+      <div class="section shared">
+        <div class="section-head">⚡ 핵심 전략 7가지</div>
+        <div class="section-body">
+
+          <h3>1. 스토리텔링으로 전환</h3>
+          <ul>
+            <li>단순 목록 → <strong>문제 → 과정 → 결과</strong> 서사 구조로 재구성</li>
+            <li>각 프로젝트에 "왜 만들었는가", "어떤 어려움이 있었는가" 섹션 추가</li>
+            <li>Before / After 비교 이미지 또는 수치 삽입</li>
+          </ul>
+
+          <h3>2. 인터랙티브 요소 추가</h3>
+          <ul>
+            <li>라이브 데모 또는 인터랙티브 미리보기 삽입</li>
+            <li>코드 스니펫 하이라이터 (복사 가능)</li>
+            <li>애니메이션, 스크롤 트리거 효과로 시각적 흥미 유발</li>
+          </ul>
+
+          <h3>3. 콘텐츠 계층화 (Progressive Disclosure)</h3>
+          <ul>
+            <li>요약 카드 클릭 시 상세 케이스 스터디 페이지로 이동</li>
+            <li>각 프로젝트 페이지에 관련 프로젝트 추천 섹션 추가</li>
+            <li>방문자가 "다음으로 볼 것"을 항상 제시</li>
+          </ul>
+
+          <h3>4. 블로그 / 기술 아티클 섹션 신설</h3>
+          <ul>
+            <li>학습 기록, 문제 해결 과정, 기술 인사이트 포스팅</li>
+            <li>검색 유입 및 재방문 동기 부여</li>
+            <li>깊이 있는 글 1편 = 체류 시간 수 분 확보</li>
+          </ul>
+
+          <h3>5. 동영상 콘텐츠 활용</h3>
+          <ul>
+            <li>프로젝트 시연 영상 (30초~2분) 삽입</li>
+            <li>자기소개 영상 또는 개발 과정 타임랩스</li>
+            <li>영상은 자동재생 없이, 썸네일로 클릭 유도</li>
+          </ul>
+
+          <h3>6. 네비게이션 및 UX 개선</h3>
+          <ul>
+            <li>스크롤 진행률 표시 바 추가</li>
+            <li>목차(TOC) 고정 사이드바로 긴 페이지 탐색 편의 제공</li>
+            <li>명확한 CTA: "다음 프로젝트 보기", "전체 케이스 스터디 읽기"</li>
+          </ul>
+
+          <h3>7. 성능 최적화</h3>
+          <ul>
+            <li>페이지 로딩 속도 개선 (Core Web Vitals 기준 충족)</li>
+            <li>이미지 WebP 변환, 지연 로딩 적용</li>
+            <li>빠른 로딩 = 이탈률 감소 = 체류 시간 증가</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 실행 우선순위 -->
+      <div class="section shared">
+        <div class="section-head">📊 실행 우선순위</div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>우선순위</th><th>과제</th><th>예상 효과</th></tr>
+              <tr><td class="pri-high">🔴 높음</td><td>프로젝트 스토리텔링 재구성</td><td>체류 시간 +40% 예상</td></tr>
+              <tr><td class="pri-high">🔴 높음</td><td>블로그 섹션 신설</td><td>재방문 + 장기 체류 유도</td></tr>
+              <tr><td class="pri-medium">🟡 중간</td><td>인터랙티브 데모 추가</td><td>체류 시간 +20% 예상</td></tr>
+              <tr><td class="pri-medium">🟡 중간</td><td>동영상 삽입</td><td>체류 시간 +15% 예상</td></tr>
+              <tr><td class="pri-low">🟢 낮음</td><td>네비게이션 UX 개선</td><td>이탈률 감소</td></tr>
+              <tr><td class="pri-low">🟢 낮음</td><td>성능 최적화</td><td>이탈률 감소</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 측정 방법 -->
+      <div class="section shared">
+        <div class="section-head">📈 측정 방법</div>
+        <div class="section-body">
+          <ul>
+            <li><strong>Google Analytics 4</strong>: 평균 참여 시간(Engaged Sessions) 추적</li>
+            <li><strong>Hotjar / Microsoft Clarity</strong>: 스크롤 깊이, 클릭 히트맵 분석</li>
+            <li>목표: 현재 체류 시간 × 2 달성 후 A/B 테스트로 효과 검증</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 다음 단계 -->
+      <div class="section">
+        <div class="section-head">▶ 다음 단계</div>
+        <div class="section-body">
+          <ol>
+            <li>현재 체류 시간 데이터 수집 (GA4 설치/확인)</li>
+            <li>가장 이탈이 많은 페이지 파악</li>
+            <li>스토리텔링 재구성부터 순차 적용</li>
+            <li>4주 단위로 지표 리뷰</li>
+          </ol>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════ RIGHT COLUMN ══════════════ -->
+  <div>
+    <div class="col-header right">
+      <span class="col-icon">🧠</span>
+      <div>
+        <div class="col-title">체류 시간 늘리기 – 체계적 구상</div>
+        <div class="col-sub">Sequential Thinking · 7단계 논리 구조</div>
+      </div>
+      <span class="col-badge">7단계 분석</span>
+    </div>
+    <div class="panel right">
+
+      <!-- 핵심 원칙 -->
+      <div class="section shared">
+        <div class="section-head">💎 핵심 원칙</div>
+        <div class="section-body">
+          <blockquote>방문자가 떠나지 않는 것이 아니라, <strong>다음에 볼 것이 있어서 머무르는 상태</strong>를 만든다.</blockquote>
+        </div>
+      </div>
+
+      <!-- 1단계: 문제 진단 -->
+      <div class="section shared">
+        <div class="section-head">1️⃣ 문제 진단 — 체류 시간이 짧은 3가지 원인</div>
+        <div class="section-body">
+          <ol>
+            <li>방문자가 원하는 것을 <strong>빠르게 찾고</strong> 떠난다</li>
+            <li>원하는 것을 <strong>찾지 못해서</strong> 떠난다</li>
+            <li>원하는 것은 찾았지만 <strong>더 탐색할 콘텐츠가 없어서</strong> 떠난다</li>
+          </ol>
+          <p style="margin-top:10px">대부분의 포트폴리오는 <strong>3번 문제</strong>를 안고 있다.</p>
+        </div>
+      </div>
+
+      <!-- 2단계: 페르소나 분석 -->
+      <div class="section unique">
+        <div class="section-head">2️⃣ 페르소나 분석 — 누가 얼마나 머무르길 원하는가</div>
+        <div class="section-body diff-only">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>페르소나</th><th>원하는 정보</th><th>효과적인 콘텐츠</th></tr>
+              <tr><td>채용 담당자</td><td>역량, 규모, 협업 값증</td><td>체계화된 요약 + 시각적 수치</td></tr>
+              <tr><td>동료 개발자</td><td>기술 결정 이유, 코드 품질</td><td>케이스 스터디 + 기술 블로그</td></tr>
+              <tr><td>잠재 클라이언트</td><td>결과물 품질, 신뢰도</td><td>Before/After + 성과 수치 + 추천사</td></tr>
+            </table>
+          </div>
+          <p style="margin-top:10px">모든 페르소나를 위한 <strong>공통 전략</strong> + <strong>각자를 위한 콘텐츠 경로</strong>가 필요하다.</p>
+        </div>
+      </div>
+
+      <!-- 3단계: 3가지 레버 -->
+      <div class="section shared">
+        <div class="section-head">3️⃣ 체류 시간 증가의 3가지 레버(Lever)</div>
+        <div class="section-body">
+          <h3>A. 콘텐츠 밀도 증가</h3>
+          <ul>
+            <li>프로젝트 케이스 스터디 상세 페이지</li>
+            <li>기술 블로그 섹션</li>
+            <li>스킬 섹션에 코드 예시 포함</li>
+          </ul>
+          <h3>B. 이탈 방지</h3>
+          <ul>
+            <li>연관 프로젝트 추천 링크</li>
+            <li>"다음 프로젝트 보기" CTA 버튼</li>
+            <li>페이지 하단에 자동 연결되는 콘텐츠</li>
+          </ul>
+          <h3>C. 참여 유도 (Engagement)</h3>
+          <ul>
+            <li>인터랙티브 데모 또는 라이브 미리보기</li>
+            <li>코드 스니펫 복사 버튼</li>
+            <li>애니메이션과 스크롤 트리거</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 4단계: 로드맵 -->
+      <div class="section shared">
+        <div class="section-head">4️⃣ 단계별 실행 로드맵</div>
+        <div class="section-body">
+          <div class="phase-card phase-1">
+            <span class="phase-tag">Phase 1 · 1~2주 · 즉시 효과</span>
+            <h4>케이스 스터디 상세 페이지 추가</h4>
+            <ul>
+              <li>전체 프로젝트 목록에 상세 페이지 연결</li>
+              <li>구조: <strong>문제 배경 → 기술 결정 과정 → 성과 수치</strong></li>
+              <li>"다음 프로젝트" CTA 버튼 삽입</li>
+            </ul>
+            <div class="effect-badge">↑ 예상 효과: 체류 시간 +60~90초/방문자</div>
+          </div>
+          <div class="phase-card phase-2">
+            <span class="phase-tag">Phase 2 · 3~4주 · 중기 효과</span>
+            <h4>기술 블로그 시작</h4>
+            <ul>
+              <li>프로젝트 회고 형식으로 첫 3~5편 작성</li>
+              <li>각 포스팅과 관련 프로젝트 페이지 상호 연결</li>
+              <li>로딩 속도 점검 (LCP, CLS, FID)</li>
+            </ul>
+            <div class="effect-badge">↑ 예상 효과: 블로그 방문자 +2~3분 추가 체류</div>
+          </div>
+          <div class="phase-card phase-3">
+            <span class="phase-tag">Phase 3 · 5~6주 · 심화 효과</span>
+            <h4>인터랙티브 요소 도입</h4>
+            <ul>
+              <li>라이브 데모 또는 코드 플레이그라운드 삽입</li>
+              <li>스킬 섹션에 코드 스니펫 추가</li>
+              <li>관련 프로젝트 추천 영역 구현</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5단계: 리스크 -->
+      <div class="section unique">
+        <div class="section-head">5️⃣ 리스크 및 대응책</div>
+        <div class="section-body diff-only">
+          <div class="tbl-wrap">
+            <table>
+              <tr><th>리스크</th><th>대응책</th></tr>
+              <tr><td>콘텐츠 과다로 정보 과부하</td><td>Progressive Disclosure, 첫 화면은 간결 유지</td></tr>
+              <tr><td>블로그 작성 부담</td><td>월 1~2편 목표, 회고 형식으로 부담 감소</td></tr>
+              <tr><td>로딩 속도 저하</td><td>코드 스플리팅, Lazy loading, WebP 이미지</td></tr>
+              <tr><td>체류만 늘고 전환 없음</td><td>CTA 클릭률, 연락처 조회를 함께 추적</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6단계: 측정 -->
+      <div class="section shared">
+        <div class="section-head">6️⃣ 측정 프레임워크</div>
+        <div class="section-body">
+          <h3>Baseline 측정 (시작 전 필수)</h3>
+          <ul>
+            <li>GA4: 평균 참여 시간 (Engaged Session Duration)</li>
+            <li>페이지/세션 수 · 이탈률 (Bounce Rate)</li>
+            <li>Hotjar: 스크롤 깊이 + 히트맵</li>
+          </ul>
+          <h3>4주 단위 리뷰 항목</h3>
+          <ol>
+            <li>체류 시간 vs. 목표치 비교</li>
+            <li>어떤 페이지에서 이탈이 많은가</li>
+            <li>CTA 클릭률 추이</li>
+            <li>블로그 vs. 프로젝트 페이지 체류 시간 비교</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- 7단계: 핵심 인사이트 -->
+      <div class="section unique">
+        <div class="section-head">7️⃣ 최종 결론 — 핵심 인사이트 3가지</div>
+        <div class="section-body diff-only">
+          <div class="insight-card">
+            <div class="insight-title">⚡ 혁명적 단일 액션</div>
+            <div class="insight-desc">각 프로젝트 카드에 케이스 스터디 상세 페이지 연결<br>→ 클릭 한 번만으로 <strong>+1~3분 체류</strong> 확보</div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-title">📅 지속 가능한 장기 전략</div>
+            <div class="insight-desc">기술 블로그 운영<br>→ 재방문율 + 검색 유입 + 체류 시간을 한 번에 잡는다</div>
+          </div>
+          <div class="insight-card">
+            <div class="insight-title">🔗 과소평가된 전략</div>
+            <div class="insight-desc">"다음으로 볼 것" 추천 링크<br>→ 코딩 시간 최소, 이탈 방지 효과 최대</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실행 순서 -->
+      <div class="section unique">
+        <div class="section-head">🗺 실행 순서 요약</div>
+        <div class="section-body diff-only">
+          <pre>1단계: 현재 체류 시간 Baseline 측정 (GA4 설치)
+2단계: 케이스 스터디 상세 페이지 추가 (Phase 1)
+3단계: 기술 블로그 시작 (Phase 2)
+4단계: 인터랙티브 요소 도입 (Phase 3)
+5단계: 4주 리뷰 → 데이터 기반 반복 개선</pre>
+          <p style="margin-top:12px; font-weight:700; color:#48bb78; text-align:center">🎯 목표: 6주 내 체류 시간 × 2 달성</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- 차이점 요약 카드 -->
+<div style="max-width:1600px; margin:0 auto 48px; padding:0 24px;">
+  <div style="background:#141924; border:1px solid #1e2535; border-radius:12px; padding:28px;">
+    <h2 style="font-size:1rem; font-weight:700; color:#f7fafc; margin-bottom:20px; text-align:center">🔎 두 문서의 핵심 차이점</h2>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+      <div style="background:#1a2233; border-radius:8px; padding:16px; border-top:2px solid #3b82f6;">
+        <div style="font-size:0.78rem; font-weight:700; color:#93c5fd; margin-bottom:8px">💡 브레인스토밍</div>
+        <ul style="font-size:0.82rem; color:#a0aec0; padding-left:16px; line-height:1.8">
+          <li>7가지 전략을 폭넓게 나열</li>
+          <li>우선순위 테이블로 정리</li>
+          <li>동영상 콘텐츠 전략 포함</li>
+          <li>아이디어 중심, 빠른 스캔 가능</li>
+        </ul>
+      </div>
+      <div style="background:#1a2233; border-radius:8px; padding:16px; border-top:2px solid #48bb78;">
+        <div style="font-size:0.78rem; font-weight:700; color:#6ee7b7; margin-bottom:8px">🟢 공통 핵심</div>
+        <ul style="font-size:0.82rem; color:#a0aec0; padding-left:16px; line-height:1.8">
+          <li>스토리텔링 / 케이스 스터디</li>
+          <li>기술 블로그 섹션 신설</li>
+          <li>인터랙티브 요소 추가</li>
+          <li>GA4 + Hotjar 측정</li>
+          <li>4주 단위 리뷰 사이클</li>
+        </ul>
+      </div>
+      <div style="background:#1a2233; border-radius:8px; padding:16px; border-top:2px solid #a78bfa;">
+        <div style="font-size:0.78rem; font-weight:700; color:#c4b5fd; margin-bottom:8px">🧠 체계적 구상 (추가)</div>
+        <ul style="font-size:0.82rem; color:#a0aec0; padding-left:16px; line-height:1.8">
+          <li>페르소나 3종 분석</li>
+          <li>이탈 원인 3가지 진단</li>
+          <li>리스크 & 대응책 테이블</li>
+          <li>6주 Phase 로드맵</li>
+          <li>핵심 인사이트 3가지</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑ 맨 위로</button>
+
+</body>
+</html>
